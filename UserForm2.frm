@@ -34,19 +34,64 @@ End Sub
 
 
 Private Sub TextBox1_Change()
-'Debug.Print TextBox1.SelStart & "\" & TextBox1.SelText & "\" & TextBox1.CurLine
 
 Dim tmr As Single
 tmr = Timer
 
+
+'Debug.Print TextBox1.SelStart & "\" & TextBox1.SelText & "\" & TextBox1.CurLine
+Dim lSelStart As Long
+lSelStart = TextBox1.SelStart
+
+Dim strText As String
+strText = TextBox1.text
+
+Dim lStart As Long
+lStart = InStrRev(strText, ";", lSelStart, vbTextCompare)
+If lStart = 0 Then
+lStart = InStrRev(strText, ",", lSelStart, vbTextCompare)
+End If
+'if lstart = 0 then we need 1 if we find comma or semicolon - then we need next position
+lStart = lStart + 1
+
+Dim lEnd As Long
+lEnd = InStr(lSelStart, strText, ";", vbTextCompare)
+If lEnd = 0 Then
+lEnd = InStr(lSelStart, strText, ",", vbTextCompare)
+End If
+If lEnd = 0 Then
+    lEnd = Len(strText)
+Else
+    lEnd = lEnd - 1
+End If
+
+
+Dim strCurCategory As String
+strCurCategory = VBA.Mid(strText, lStart, lEnd - lStart + 1)
+strCurCategory = VBA.Trim(strCurCategory)
+
+Label1.Caption = lStart & " " & lEnd & " " & lSelStart & " " & strCurCategory
+
+
+
 ListBox1.Clear
-ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 1)
-ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 2)
-ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 3)
-ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 4)
-ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 5)
-ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 6)
-ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 7)
+'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 1)
+'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 2)
+'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 3)
+'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 4)
+'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 5)
+'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 6)
+'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 7)
+
+ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 1)
+ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 2)
+ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 3)
+ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 4)
+ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 5)
+ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 6)
+ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 7)
+
+
 ListBox1.ListIndex = 0
 
 Debug.Print Timer - tmr
@@ -58,6 +103,7 @@ End Sub
 
 
 Private Sub UserForm_Initialize()
+TextBox1.text = "fuincoffer; fuoffadc   , fuoffexpir"
 
 End Sub
 
