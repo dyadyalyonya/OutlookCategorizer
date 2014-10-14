@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 Option Explicit
 
 
@@ -35,33 +36,47 @@ End Sub
 
 Private Sub TextBox1_Change()
 
+'debug
 Dim tmr As Single
 tmr = Timer
 
 
 'Debug.Print TextBox1.SelStart & "\" & TextBox1.SelText & "\" & TextBox1.CurLine
+
 Dim lSelStart As Long
 lSelStart = TextBox1.SelStart
+
+'we can't use InstrRev if selstart=0 - fix it
+If lSelStart = 0 Then lSelStart = 1
 
 Dim strText As String
 strText = TextBox1.text
 
+'some normalization
+strText = VBA.Replace(strText, ",", ";")
+
 Dim lStart As Long
-lStart = InStrRev(strText, ";", lSelStart, vbTextCompare)
-If lStart = 0 Then
-lStart = InStrRev(strText, ",", lSelStart, vbTextCompare)
-End If
-'if lstart = 0 then we need 1 if we find comma or semicolon - then we need next position
+lStart = VBA.InStrRev(strText, ";", lSelStart, vbTextCompare)
+'If lStart = 0 Then
+'lStart = InStrRev(strText, ",", lSelStart, vbTextCompare)
+'End If
+
+'if lstart = 0 (haven't find semicolon) then we need 1
+'if we find  semicolon - then we need next position after the semicolon
 lStart = lStart + 1
 
 Dim lEnd As Long
-lEnd = InStr(lSelStart, strText, ";", vbTextCompare)
+lEnd = VBA.InStr(lSelStart + 1, strText, ";", vbTextCompare)
+
+'If lEnd = 0 Then
+'lEnd = InStr(lSelStart, strText, ",", vbTextCompare)
+'End If
+
 If lEnd = 0 Then
-lEnd = InStr(lSelStart, strText, ",", vbTextCompare)
-End If
-If lEnd = 0 Then
+    'if we haven't find semicolon after cursor position - we use end of string
     lEnd = Len(strText)
 Else
+    'if we've find semicolon - we use position before semicolon
     lEnd = lEnd - 1
 End If
 
@@ -70,18 +85,14 @@ Dim strCurCategory As String
 strCurCategory = VBA.Mid(strText, lStart, lEnd - lStart + 1)
 strCurCategory = VBA.Trim(strCurCategory)
 
+'debug info
 Label1.Caption = lStart & " " & lEnd & " " & lSelStart & " " & strCurCategory
 
+Debug.Print "string manipulation:" & 1000 * (Timer - tmr)
+tmr = Timer
 
-
+'fill the listbox with suggestions
 ListBox1.Clear
-'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 1)
-'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 2)
-'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 3)
-'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 4)
-'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 5)
-'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 6)
-'ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(TextBox1.text, 7)
 
 ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 1)
 ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 2)
@@ -94,7 +105,8 @@ ListBox1.AddItem OUTLDATA_GetCategoryByFirstLetters(strCurCategory, 7)
 
 ListBox1.ListIndex = 0
 
-Debug.Print Timer - tmr
+'debug
+Debug.Print "suggestion manipulation:" & 1000 * (Timer - tmr)
 
 End Sub
 
@@ -188,44 +200,47 @@ End Sub
 
 
 
-Sub Utilz_QuickSort(vArray As Variant, lLoBound As Long, lHiBound As Long)
+Sub Utilz_SortStringArray(strArray As Variant, lLoBound As Long, lHiBound As Long)
 
-  Dim vPivotElement   As Variant
-  Dim tmpSwap As Variant
+  Dim strPivotElement   As String
+  Dim tmpSwap As String
   Dim tmpLo  As Long
   Dim tmpHi   As Long
   
   If lHiBound <= lLoBound Then
-    Err.Raise 1409151807, , "Can't sort empty array"
+    Err.Raise 40915, "Utilz_SortStringArray", "40915: Can't sort empty array"
   End If
 
   tmpLo = lLoBound
   tmpHi = lHiBound
   
-  vPivotElement = vArray((lLoBound + lHiBound) \ 2)
+  'we must use uppercase in all comparisions (VBA comparisions are case sensitive)
+  strPivotElement = VBA.UCase(strArray((lLoBound + lHiBound) \ 2))
 
   While (tmpLo <= tmpHi)
 
-     While (vArray(tmpLo) < vPivotElement And tmpLo < lHiBound)
+     While (VBA.UCase(strArray(tmpLo)) < strPivotElement And tmpLo < lHiBound)
         tmpLo = tmpLo + 1
      Wend
 
-     While (vPivotElement < vArray(tmpHi) And tmpHi > lLoBound)
+     While (strPivotElement < VBA.UCase(strArray(tmpHi)) And tmpHi > lLoBound)
         tmpHi = tmpHi - 1
      Wend
 
+     'swapping values
      If (tmpLo <= tmpHi) Then
-        tmpSwap = vArray(tmpLo)
-        vArray(tmpLo) = vArray(tmpHi)
-        vArray(tmpHi) = tmpSwap
+        tmpSwap = strArray(tmpLo)
+        strArray(tmpLo) = strArray(tmpHi)
+        strArray(tmpHi) = tmpSwap
         tmpLo = tmpLo + 1
         tmpHi = tmpHi - 1
      End If
 
   Wend
 
-  If (lLoBound < tmpHi) Then Utilz_QuickSort vArray, lLoBound, tmpHi
-  If (tmpLo < lHiBound) Then Utilz_QuickSort vArray, tmpLo, lHiBound
+  'recursion...
+  If (lLoBound < tmpHi) Then Utilz_SortStringArray strArray, lLoBound, tmpHi
+  If (tmpLo < lHiBound) Then Utilz_SortStringArray strArray, tmpLo, lHiBound
 
 End Sub
 
